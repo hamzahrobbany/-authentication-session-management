@@ -1,3 +1,4 @@
+// src/components/data-table.tsx
 "use client"
 
 import * as React from "react"
@@ -106,6 +107,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
+// Mendefinisikan skema data menggunakan Zod untuk validasi tipe
 export const schema = z.object({
   id: z.number(),
   header: z.string(),
@@ -136,11 +138,16 @@ function DragHandle({ id }: { id: number }) {
   )
 }
 
+// Definisi kolom untuk React Table
+// Catatan: Kolom ini didefinisikan di luar komponen DataTable
+// agar tidak dibuat ulang pada setiap render, yang bisa memengaruhi kinerja.
 const columns: ColumnDef<z.infer<typeof schema>>[] = [
   {
     id: "drag",
     header: () => null,
     cell: ({ row }) => <DragHandle id={row.original.id} />,
+    enableSorting: false,
+    enableHiding: false,
   },
   {
     id: "select",
@@ -213,6 +220,8 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
             success: "Done",
             error: "Error",
           })
+          // TODO: Implement actual API call to save the target value
+          // Example: saveTarget(row.original.id, e.currentTarget.target.value);
         }}
       >
         <Label htmlFor={`${row.original.id}-target`} className="sr-only">
@@ -238,6 +247,8 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
             success: "Done",
             error: "Error",
           })
+          // TODO: Implement actual API call to save the limit value
+          // Example: saveLimit(row.original.id, e.currentTarget.limit.value);
         }}
       >
         <Label htmlFor={`${row.original.id}-limit`} className="sr-only">
@@ -266,9 +277,13 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
           <Label htmlFor={`${row.original.id}-reviewer`} className="sr-only">
             Reviewer
           </Label>
-          <Select>
+          <Select onValueChange={(value) => {
+            // TODO: Implement actual API call to save the reviewer
+            // Example: saveReviewer(row.original.id, value);
+            toast.info(`Assigning ${value} to ${row.original.header}...`);
+          }}>
             <SelectTrigger
-              className="w-38 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate"
+              className="w-38 [&>span]:block [&>span]:truncate"
               size="sm"
               id={`${row.original.id}-reviewer`}
             >
@@ -279,6 +294,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
               <SelectItem value="Jamik Tashpulatov">
                 Jamik Tashpulatov
               </SelectItem>
+              <SelectItem value="Emily Whalen">Emily Whalen</SelectItem>
             </SelectContent>
           </Select>
         </>
@@ -287,7 +303,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     id: "actions",
-    cell: () => (
+    cell: ({ row }) => (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -300,17 +316,35 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-32">
-          <DropdownMenuItem>Edit</DropdownMenuItem>
-          <DropdownMenuItem>Make a copy</DropdownMenuItem>
-          <DropdownMenuItem>Favorite</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => toast.info(`Editing ${row.original.header}`)}>Edit</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => toast.info(`Making a copy of ${row.original.header}`)}>Make a copy</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => toast.info(`Favoriting ${row.original.header}`)}>Favorite</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
+          <DropdownMenuItem variant="destructive" onClick={() => {
+            // TODO: Implement actual API call to delete the row
+            // Example: deleteRow(row.original.id);
+            toast.promise(new Promise((resolve, reject) => {
+              setTimeout(() => {
+                const success = Math.random() > 0.3; // 70% success rate for demo
+                if (success) {
+                  resolve(`Deleted ${row.original.header}`);
+                } else {
+                  reject(`Failed to delete ${row.original.header}`);
+                }
+              }, 1000);
+            }), {
+              loading: `Deleting ${row.original.header}...`,
+              success: (message) => message,
+              error: (error) => error,
+            });
+          }}>Delete</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     ),
   },
 ]
 
+// Komponen untuk baris yang dapat di-drag
 function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
     id: row.original.id,
@@ -336,12 +370,14 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
   )
 }
 
+// Komponen utama DataTable
 export function DataTable({
-  data: initialData,
+  // initialData prop dihapus karena data akan di-fetch di dalam komponen
 }: {
-  data: z.infer<typeof schema>[]
+  // data: z.infer<typeof schema>[] // Tidak lagi menerima data sebagai prop
 }) {
-  const [data, setData] = React.useState(() => initialData)
+  const [data, setData] = React.useState<z.infer<typeof schema>[]>([]);
+  const [loading, setLoading] = React.useState(true); // State untuk loading tabel
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({})
@@ -360,11 +396,36 @@ export function DataTable({
     useSensor(KeyboardSensor, {})
   )
 
+  // Simulasi fetching data awal
+  React.useEffect(() => {
+    const fetchTableData = async () => {
+      setLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
+      const mockData: z.infer<typeof schema>[] = [
+        { id: 1, header: "Proposal A", type: "Executive Summary", status: "Done", target: "100%", limit: "90%", reviewer: "Eddie Lake" },
+        { id: 2, header: "Project B Plan", type: "Technical Approach", status: "In Progress", target: "80%", limit: "75%", reviewer: "Assign reviewer" },
+        { id: 3, header: "Marketing Strategy", type: "Narrative", status: "Not Started", target: "50%", limit: "60%", reviewer: "Jamik Tashpulatov" },
+        { id: 4, header: "Financial Report", type: "Table of Contents", status: "Done", target: "100%", limit: "100%", reviewer: "Emily Whalen" },
+        { id: 5, header: "Design Mockups", type: "Design", status: "In Progress", target: "90%", limit: "85%", reviewer: "Assign reviewer" },
+        { id: 6, header: "Client Presentation", type: "Capabilities", status: "Done", target: "100%", limit: "95%", reviewer: "Eddie Lake" },
+        { id: 7, header: "Research Paper", type: "Focus Documents", status: "In Progress", target: "70%", limit: "70%", reviewer: "Jamik Tashpulatov" },
+        { id: 8, header: "Budget Allocation", type: "Executive Summary", status: "Not Started", target: "60%", limit: "50%", reviewer: "Assign reviewer" },
+        { id: 9, header: "User Feedback Analysis", type: "Narrative", status: "Done", target: "100%", limit: "98%", reviewer: "Emily Whalen" },
+        { id: 10, header: "System Architecture", type: "Technical Approach", status: "In Progress", target: "85%", limit: "80%", reviewer: "Eddie Lake" },
+      ];
+      setData(mockData);
+      setLoading(false);
+    };
+    fetchTableData();
+  }, []);
+
+  // Memoized array of IDs untuk SortableContext
   const dataIds = React.useMemo<UniqueIdentifier[]>(
     () => data?.map(({ id }) => id) || [],
     [data]
   )
 
+  // Menginisialisasi React Table
   const table = useReactTable({
     data,
     columns,
@@ -375,7 +436,7 @@ export function DataTable({
       columnFilters,
       pagination,
     },
-    getRowId: (row) => row.id.toString(),
+    getRowId: (row) => row.id.toString(), // Penting: Mengonversi ID ke string untuk dnd-kit
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -390,13 +451,22 @@ export function DataTable({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
 
+  // Handler untuk event drag end
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     if (active && over && active.id !== over.id) {
-      setData((data) => {
+      setData((prevData) => {
         const oldIndex = dataIds.indexOf(active.id)
         const newIndex = dataIds.indexOf(over.id)
-        return arrayMove(data, oldIndex, newIndex)
+        const newData = arrayMove(prevData, oldIndex, newIndex);
+        // TODO: Implement actual API call to save the new order to the backend
+        // Example: saveNewOrder(newData.map(item => item.id));
+        toast.promise(new Promise((resolve) => setTimeout(resolve, 500)), {
+          loading: "Saving new order...",
+          success: "Order saved!",
+          error: "Failed to save order.",
+        });
+        return newData;
       })
     }
   }
@@ -425,7 +495,7 @@ export function DataTable({
             <SelectItem value="focus-documents">Focus Documents</SelectItem>
           </SelectContent>
         </Select>
-        <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
+        <TabsList className="[&>button>span]:data-[slot=badge]:bg-muted-foreground/30 [&>button>span]:data-[slot=badge]:size-5 [&>button>span]:data-[slot=badge]:rounded-full [&>button>span]:data-[slot=badge]:px-1 hidden @4xl/main:flex">
           <TabsTrigger value="outline">Outline</TabsTrigger>
           <TabsTrigger value="past-performance">
             Past Performance <Badge variant="secondary">3</Badge>
@@ -506,8 +576,20 @@ export function DataTable({
                   </TableRow>
                 ))}
               </TableHeader>
-              <TableBody className="**:data-[slot=table-cell]:first:w-8">
-                {table.getRowModel().rows?.length ? (
+              <TableBody className="[&>tr>td:first-child]:w-8">
+                {loading ? (
+                  // Skeleton loader for table rows
+                  Array.from({ length: pagination.pageSize }).map((_, i) => (
+                    <TableRow key={`skeleton-${i}`}>
+                      <TableCell colSpan={columns.length} className="h-12">
+                        <div className="flex items-center space-x-4">
+                          <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : table.getRowModel().rows?.length ? (
                   <SortableContext
                     items={dataIds}
                     strategy={verticalListSortingStrategy}
@@ -612,21 +694,29 @@ export function DataTable({
         value="past-performance"
         className="flex flex-col px-4 lg:px-6"
       >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
+        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground">
+          Past Performance content goes here.
+        </div>
       </TabsContent>
       <TabsContent value="key-personnel" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
+        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground">
+          Key Personnel content goes here.
+        </div>
       </TabsContent>
       <TabsContent
         value="focus-documents"
         className="flex flex-col px-4 lg:px-6"
       >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
+        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground">
+          Focus Documents content goes here.
+        </div>
       </TabsContent>
     </Tabs>
   )
 }
 
+// Data chart hardcoded untuk TableCellViewer
+// Di aplikasi nyata, data ini akan di-fetch berdasarkan item yang diklik.
 const chartData = [
   { month: "January", desktop: 186, mobile: 80 },
   { month: "February", desktop: 305, mobile: 200 },
@@ -636,6 +726,7 @@ const chartData = [
   { month: "June", desktop: 214, mobile: 140 },
 ]
 
+// Konfigurasi chart untuk TableCellViewer
 const chartConfig = {
   desktop: {
     label: "Desktop",
@@ -647,8 +738,38 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
+// Komponen untuk menampilkan detail sel tabel dalam Drawer
 function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   const isMobile = useIsMobile()
+  // State untuk mengelola nilai form di dalam drawer
+  const [formData, setFormData] = React.useState(item);
+
+  // Handler perubahan input form
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  // Handler submit form
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    toast.promise(new Promise((resolve, reject) => {
+      // TODO: Implement actual API call to save updated item data
+      // Example: updateItem(formData.id, formData);
+      setTimeout(() => {
+        const success = Math.random() > 0.2; // 80% success rate
+        if (success) {
+          resolve(`Saved changes for ${formData.header}`);
+        } else {
+          reject(`Failed to save changes for ${formData.header}`);
+        }
+      }, 1000);
+    }), {
+      loading: `Saving changes for ${formData.header}...`,
+      success: (message) => message,
+      error: (error) => error,
+    });
+  };
 
   return (
     <Drawer direction={isMobile ? "bottom" : "right"}>
@@ -722,15 +843,15 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
               <Separator />
             </>
           )}
-          <form className="flex flex-col gap-4">
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-3">
               <Label htmlFor="header">Header</Label>
-              <Input id="header" defaultValue={item.header} />
+              <Input id="header" value={formData.header} onChange={handleInputChange} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="type">Type</Label>
-                <Select defaultValue={item.type}>
+                <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
                   <SelectTrigger id="type" className="w-full">
                     <SelectValue placeholder="Select a type" />
                   </SelectTrigger>
@@ -756,7 +877,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
               </div>
               <div className="flex flex-col gap-3">
                 <Label htmlFor="status">Status</Label>
-                <Select defaultValue={item.status}>
+                <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
                   <SelectTrigger id="status" className="w-full">
                     <SelectValue placeholder="Select a status" />
                   </SelectTrigger>
@@ -771,16 +892,16 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="target">Target</Label>
-                <Input id="target" defaultValue={item.target} />
+                <Input id="target" value={formData.target} onChange={handleInputChange} />
               </div>
               <div className="flex flex-col gap-3">
                 <Label htmlFor="limit">Limit</Label>
-                <Input id="limit" defaultValue={item.limit} />
+                <Input id="limit" value={formData.limit} onChange={handleInputChange} />
               </div>
             </div>
             <div className="flex flex-col gap-3">
               <Label htmlFor="reviewer">Reviewer</Label>
-              <Select defaultValue={item.reviewer}>
+              <Select value={formData.reviewer} onValueChange={(value) => setFormData(prev => ({ ...prev, reviewer: value }))}>
                 <SelectTrigger id="reviewer" className="w-full">
                   <SelectValue placeholder="Select a reviewer" />
                 </SelectTrigger>
@@ -793,14 +914,14 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 </SelectContent>
               </Select>
             </div>
+            <DrawerFooter>
+              <Button type="submit">Submit</Button>
+              <DrawerClose asChild>
+                <Button variant="outline">Done</Button>
+              </DrawerClose>
+            </DrawerFooter>
           </form>
         </div>
-        <DrawerFooter>
-          <Button>Submit</Button>
-          <DrawerClose asChild>
-            <Button variant="outline">Done</Button>
-          </DrawerClose>
-        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   )

@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { ReactNode } from "react";
 
 
+
 export function AppLayout({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>

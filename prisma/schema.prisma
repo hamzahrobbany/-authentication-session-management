@@ -84,33 +84,34 @@ enum AuditAction {
 // ==========================
 
 model User {
-  id              Int       @id @default(autoincrement())
-  name            String?
-  email           String    @unique
-  emailVerified   DateTime?
-  password        String?
-  image           String?
-  role            Role      @default(CUSTOMER)
+  id                String    @id @default(cuid())
+  name              String?
+  email             String    @unique
+  emailVerified     DateTime?
+  password          String?
+  image             String?
+  role              Role      @default(CUSTOMER)
   isVerifiedByAdmin Boolean   @default(false)
-  phoneNumber     String?
-  address         String?   @db.Text
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  phoneNumber       String?
+  address           String?   @db.Text
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  accounts        Account[]
-  sessions        Session[]
-  vehicles        Vehicle[]
-  orders          Order[]
-  reviews         Review[]
-  notifications   Notification[]
-  auditLogs       AuditLog[]
+  accounts          Account[]
+  sessions          Session[]
+  vehicles          Vehicle[]
+  orders            Order[]
+  reviews           Review[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
 
   @@map("User")
 }
 
 model Account {
   id                String  @id @default(cuid())
-  userId            Int
+  // userId sekarang harus String untuk referensi ke User.id
+  userId            String
   type              String
   provider          String
   providerAccountId String
@@ -131,7 +132,8 @@ model Account {
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
-  userId       Int
+  // userId sekarang harus String untuk referensi ke User.id
+  userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -148,29 +150,30 @@ model VerificationToken {
 }
 
 model Vehicle {
-  id               Int            @id @default(autoincrement())
-  ownerId          Int
-  name             String
-  slug             String         @unique
-  description      String?        @db.Text
-  type             VehicleType
-  capacity         Int
-  transmissionType TransmissionType
-  fuelType         FuelType
-  dailyRate        Decimal        @db.Decimal(10, 2)
-  lateFeePerDay    Decimal        @db.Decimal(10, 2)
-  mainImageUrl     String?
-  isAvailable      Boolean        @default(true)
-  licensePlate     String         @unique
-  city             String
-  address          String?        @db.Text
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  id                Int            @id @default(autoincrement())
+  // ownerId sekarang harus String untuk referensi ke User.id
+  ownerId           String
+  name              String
+  slug              String         @unique
+  description       String?        @db.Text
+  type              VehicleType
+  capacity          Int
+  transmissionType  TransmissionType
+  fuelType          FuelType
+  dailyRate         Decimal        @db.Decimal(10, 2)
+  lateFeePerDay     Decimal        @db.Decimal(10, 2)
+  mainImageUrl      String?
+  isAvailable       Boolean        @default(true)
+  licensePlate      String         @unique
+  city              String
+  address           String?        @db.Text
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
-  owner            User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  images           VehicleImage[]
-  orders           Order[]
-  reviews          Review[]
+  owner             User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  images            VehicleImage[]
+  orders            Order[]
+  reviews           Review[]
 
   @@map("Vehicle")
 }
@@ -189,7 +192,8 @@ model VehicleImage {
 
 model Order {
   id              Int           @id @default(autoincrement())
-  userId          Int
+  // userId sekarang harus String untuk referensi ke User.id
+  userId          String
   vehicleId       Int
   driverId        Int? // OPTIONAL DRIVER
   startDate       DateTime
@@ -235,7 +239,8 @@ model Payment {
 
 model Review {
   id        Int      @id @default(autoincrement())
-  userId    Int
+  // userId sekarang harus String untuk referensi ke User.id
+  userId    String
   vehicleId Int
   rating    Int      @default(0) @db.SmallInt
   comment   String?  @db.Text
@@ -252,15 +257,16 @@ model Review {
 }
 
 model Notification {
-  id          Int              @id @default(autoincrement())
-  userId      Int
-  title       String
-  message     String            @db.Text
-  type        NotificationType
-  isRead      Boolean           @default(false)
-  createdAt   DateTime          @default(now())
+  id        Int            @id @default(autoincrement())
+  // userId sekarang harus String untuk referensi ke User.id
+  userId    String
+  title     String
+  message   String         @db.Text
+  type      NotificationType
+  isRead    Boolean        @default(false)
+  createdAt DateTime       @default(now())
 
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("Notification")
@@ -268,14 +274,15 @@ model Notification {
 
 model AuditLog {
   id          Int         @id @default(autoincrement())
-  userId      Int?
+  // userId sekarang harus String untuk referensi ke User.id
+  userId      String?
   action      AuditAction
-  description String       @db.Text
+  description String      @db.Text
   ipAddress   String?
   userAgent   String?
-  createdAt   DateTime     @default(now())
+  createdAt   DateTime    @default(now())
 
-  user        User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("AuditLog")
@@ -286,10 +293,10 @@ model ReferralCode {
   code        String   @unique
   discount    Decimal  @db.Decimal(5, 2)
   usageLimit  Int
-  usedCount   Int       @default(0)
+  usedCount   Int      @default(0)
   validUntil  DateTime
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("ReferralCode")
 }

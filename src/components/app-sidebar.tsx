@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { signOut, useSession } from "next-auth/react"
-import { useRouter } from "next/navigation" // <-- Pastikan ini ada
+import { useRouter } from "next/navigation"
 
 import {
   IconDashboard,
@@ -16,7 +16,6 @@ import {
   IconLogout,
 } from "@tabler/icons-react"
 
-// Import ini sudah BENAR dan TIDAK PERLU DIUBAH
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
@@ -29,56 +28,58 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-type SidebarProps = {
-  session: any; // atau sesuaikan dengan tipe `Session`
-};
 
-export function AppSidebar({  ...props }: React.ComponentProps<typeof Sidebar>) {
-    const { data: session, status } = useSession();
-  const router = useRouter(); // <-- INISIALISASI useRouter
- 
-  const role = session?.profile?.role.toLowerCase() || "guest";
-  console.log('role : ',role)
-  // Fungsi logout yang akan ditugaskan ke item navSecondary
+// Menentukan tipe props untuk komponen AppSidebar
+type AppSidebarProps = React.ComponentProps<typeof Sidebar>;
+
+export function AppSidebar({ ...props }: AppSidebarProps) {
+  // Mengambil data sesi dan status dari NextAuth.js
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Menentukan role pengguna dari sesi, default ke "guest" jika tidak ada sesi atau role
+  const role = session?.profile?.role?.toLowerCase() || "guest";
+
+  // Fungsi untuk menangani proses logout
   const handleLogoutClick = async () => {
-    // 1. Panggil signOut, tapi nonaktifkan redirect otomatis NextAuth
+    // Memanggil signOut dari NextAuth.js tanpa redirect otomatis
     await signOut({
-      redirect: false, // PENTING: Mencegah NextAuth melakukan redirect server-side otomatis
+      redirect: false, // Penting: Mencegah NextAuth melakukan redirect server-side
     });
-    // 2. Lakukan redirect secara manual di sisi client ke halaman login
-    router.push("/login"); // PENTING: Memaksa navigasi client-side ke halaman login
+    // Melakukan redirect manual ke halaman login di sisi client
+    router.push("/login"); // Penting: Memaksa navigasi client-side
   };
 
-  // Data navigasi (sekarang bisa menggunakan handleLogoutClick)
+  // Data navigasi untuk sidebar
+  // Data pengguna sekarang diambil secara dinamis dari sesi
   const data = {
     user: {
-      name: "Admin",
-      email: "admin@example.com",
-      avatar: "/avatars/admin.png",
-       // <-- Tambahkan role yang sesuai
+      name: session?.user?.name || "Guest", // Mengambil nama dari sesi
+      email: session?.user?.email || "guest@example.com", // Mengambil email dari sesi
+      avatar: session?.user?.image || "/avatars/default-user.png", // Mengambil avatar dari sesi, dengan fallback
     },
     navMain: [
       {
         title: "Dashboard",
-        url: "/", // <-- Ganti ke "/" jika dashboard utama ada di root (URL: http://localhost:3000/)
+        url: "/",
         icon: IconDashboard,
-        allowedRoles: ["admin", "owner"],
+        allowedRoles: ["admin", "owner", "customer"],
       },
       {
         title: "Vehicles",
-        url: "/vehicles", // <-- Asumsi rute utama (misal: app/(main)/vehicles/page.tsx)
+        url: "/vehicles",
         icon: IconCar,
         allowedRoles: ["admin", "owner"],
       },
       {
         title: "Orders",
-        url: "/orders", // <-- Asumsi rute utama (misal: app/(main)/orders/page.tsx)
+        url: "/orders",
         icon: IconReceipt,
         allowedRoles: ["admin", "customer"],
       },
       {
         title: "Users",
-        url: "/users", // <-- Asumsi rute utama (misal: app/(main)/users/page.tsx)
+        url: "/users",
         icon: IconUser,
         allowedRoles: ["admin", "owner"],
       },
@@ -86,39 +87,84 @@ export function AppSidebar({  ...props }: React.ComponentProps<typeof Sidebar>) 
     navSecondary: [
       {
         title: "Settings",
-        url: "/settings", // <-- Asumsi rute utama
+        url: "/settings",
         icon: IconSettings,
-        allowedRoles: ["admin",  "owner"],
+        allowedRoles: ["admin", "owner", "customer"],
       },
       {
         title: "Search",
-        url: "/search", // <-- Asumsi rute utama
+        url: "/search",
         icon: IconSearch,
-        allowedRoles: ["admin",  "owner"],
+        allowedRoles: ["admin", "owner", "customer"],
       },
       {
         title: "Help",
-        url: "/help", // <-- Asumsi rute utama
+        url: "/help",
         icon: IconHelp,
-        allowedRoles: ["admin",  "owner"],
+        allowedRoles: ["admin", "owner", "customer"],
       },
       {
         title: "Logout",
-        url: "#", // Tetap "#" karena kita akan menangani navigasi secara manual dengan onClick
+        url: "#",
         icon: IconLogout,
-        onClick: handleLogoutClick,
-        allowedRoles: ["admin",  "owner"], // <-- LANGSUNG TUGASKAN FUNGSI handleLogoutClick KE onClick
+        onClick: handleLogoutClick, // Menugaskan fungsi logout ke item ini
+        allowedRoles: ["admin", "owner", "customer"], // Semua role bisa logout
       },
     ],
   };
 
-   const filteredNavMain = data.navMain.filter(item =>
+  // Memfilter item navigasi berdasarkan role pengguna
+  const filteredNavMain = data.navMain.filter(item =>
     item.allowedRoles.includes(role)
   );
 
   const filteredNavSecondary = data.navSecondary.filter(item =>
     item.allowedRoles.includes(role)
   );
+
+  // Menampilkan komponen Sidebar
+  // Jika sesi sedang dimuat, tampilkan skeleton loader
+  if (status === "loading") {
+    return (
+      <Sidebar collapsible="offcanvas" {...props}>
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
+                <a href="/">
+                  <IconDashboard className="!size-5" />
+                  <span className="text-base font-semibold">Loading...</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
+        <SidebarContent>
+          {/* Skeleton loader untuk NavMain */}
+          <div className="flex flex-col gap-2 p-4">
+            <div className="h-8 bg-gray-200 rounded-md animate-pulse"></div>
+            <div className="h-8 bg-gray-200 rounded-md animate-pulse w-3/4"></div>
+            <div className="h-8 bg-gray-200 rounded-md animate-pulse w-1/2"></div>
+          </div>
+          {/* Skeleton loader untuk NavSecondary */}
+          <div className="flex flex-col gap-2 p-4 mt-auto">
+            <div className="h-8 bg-gray-200 rounded-md animate-pulse w-2/3"></div>
+            <div className="h-8 bg-gray-200 rounded-md animate-pulse"></div>
+          </div>
+        </SidebarContent>
+        <SidebarFooter>
+          {/* Skeleton loader untuk NavUser */}
+          <div className="flex items-center gap-2 p-4">
+            <div className="h-8 w-8 rounded-lg bg-gray-200 animate-pulse"></div>
+            <div className="flex-1 grid gap-1">
+              <div className="h-4 bg-gray-200 rounded-md animate-pulse w-3/4"></div>
+              <div className="h-3 bg-gray-200 rounded-md animate-pulse w-1/2"></div>
+            </div>
+          </div>
+        </SidebarFooter>
+      </Sidebar>
+    );
+  }
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -129,7 +175,7 @@ export function AppSidebar({  ...props }: React.ComponentProps<typeof Sidebar>) 
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="/"> {/* <-- Pastikan ini mengarah ke root path jika dashboard ada di root */}
+              <a href="/">
                 <IconDashboard className="!size-5" />
                 <span className="text-base font-semibold">RentalKendaraan</span>
               </a>
@@ -138,12 +184,10 @@ export function AppSidebar({  ...props }: React.ComponentProps<typeof Sidebar>) 
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={filteredNavMain} /> {/* <-- Impor ini sudah BENAR */}
+        <NavMain items={filteredNavMain} />
         <NavSecondary
-          items={filteredNavSecondary} // <-- Meneruskan data.navSecondary yang sudah memiliki onClick
+          items={filteredNavSecondary}
           className="mt-auto"
-          // Prop `onItemClick` tidak lagi diperlukan di sini karena NavSecondary
-          // sudah membaca `onClick` langsung dari `item`
         />
       </SidebarContent>
       <SidebarFooter>

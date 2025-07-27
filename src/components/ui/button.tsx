@@ -1,11 +1,16 @@
+// src/components/ui/button.tsx
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils" // Pastikan Anda memiliki file utils.ts ini
 
+// Definisi varian tombol menggunakan cva (class-variance-authority)
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 " +
+  "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 " +
+  "outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] " +
+  "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
@@ -25,7 +30,7 @@ const buttonVariants = cva(
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
         sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
         lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
+        icon: "size-9", // Menggunakan 'size-9' untuk konsistensi dengan Shadcn
       },
     },
     defaultVariants: {
@@ -35,25 +40,29 @@ const buttonVariants = cva(
   }
 )
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
-  const Comp = asChild ? Slot : "button"
-
-  return (
-    <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
+// Mendefinisikan tipe props untuk komponen Button secara eksplisit dan mengekspornya
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, // Menggabungkan semua atribut HTML button standar
+    VariantProps<typeof buttonVariants> { // Menggabungkan semua varian props dari cva
+  asChild?: boolean // Properti opsional untuk merender sebagai child dari komponen lain
 }
 
+// Komponen Button itu sendiri
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button" // Memilih komponen yang akan dirender: Slot jika asChild true, atau 'button' biasa
+
+    return (
+      <Comp
+        data-slot="button" // Atribut data ini bisa berguna untuk styling atau seleksi CSS
+        className={cn(buttonVariants({ variant, size, className }))} // Menggabungkan kelas dari varian dan kelas kustom
+        ref={ref} // Meneruskan ref ke elemen DOM yang mendasarinya
+        {...props} // Meneruskan semua props lainnya
+      />
+    )
+  }
+)
+Button.displayName = "Button" // Memberikan nama tampilan untuk React DevTools
+
+// Mengekspor komponen Button dan varian-variannya
 export { Button, buttonVariants }

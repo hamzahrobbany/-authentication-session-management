@@ -19,10 +19,21 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@/components/*": ["./src/components/*"] 
-    }
+      "@/*": ["./src/*"] // Ini sudah mencakup "@/components/*"
+    },
+    // Penting: Tambahkan "next-auth" ke dalam array "types"
+    // Ini memberi tahu TypeScript untuk menyertakan deklarasi tipe global dari next-auth,
+    // termasuk ekstensi tipe yang Anda buat di next-auth.d.ts
+    "types": ["node", "next-auth"]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "next-auth.d.ts" // <-- PENTING: Tambahkan ini untuk menyertakan deklarasi tipe NextAuth.js Anda
+    // Jika next-auth.d.ts Anda berada di src/types, maka Anda bisa menggunakan:
+    // "src/types/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }
