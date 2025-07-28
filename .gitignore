@@ -6,9 +6,12 @@
 .pnp.*
 .yarn/*
 !.yarn/patches
+!.yarn/yarnrc.yml # Jika Anda menggunakan yarn, ini mungkin perlu di-commit
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+# Jika Anda menggunakan pnpm, pnpm-lock.yaml harus di-commit
+
 
 # testing
 /coverage
@@ -28,16 +31,19 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+.pnpm-debug.log* # Ini sudah benar untuk pnpm
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example # Jika Anda memiliki file .env.example yang ingin di-commit
 
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
 
+
+# Prisma Client generated files
+# Ini sudah benar jika Anda mengkonfigurasi Prisma Client untuk dihasilkan di sini
 /src/generated/prisma

@@ -1,9 +1,12 @@
+// prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  // Pastikan DATABASE_URL di .env.local Anda menunjuk ke POSTGRES_PRISMA_URL
   url      = env("DATABASE_URL")
 }
 
@@ -110,7 +113,6 @@ model User {
 
 model Account {
   id                String  @id @default(cuid())
-  // userId sekarang harus String untuk referensi ke User.id
   userId            String
   type              String
   provider          String
@@ -132,7 +134,6 @@ model Account {
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
-  // userId sekarang harus String untuk referensi ke User.id
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -150,52 +151,37 @@ model VerificationToken {
 }
 
 model Vehicle {
-  id                Int            @id @default(autoincrement())
-  // ownerId sekarang harus String untuk referensi ke User.id
+  id                Int              @id @default(autoincrement()) // <-- PERBAIKAN: Menggunakan Int ID (sesuai SQL SERIAL)
   ownerId           String
-  name              String
-  slug              String         @unique
-  description       String?        @db.Text
+  name              String           // <-- PERBAIKAN: Menggunakan 'name' (sesuai SQL)
+  slug              String           @unique // <-- BARU: Menambahkan 'slug' (sesuai SQL)
+  description       String?          @db.Text
   type              VehicleType
   capacity          Int
   transmissionType  TransmissionType
   fuelType          FuelType
-  dailyRate         Decimal        @db.Decimal(10, 2)
-  lateFeePerDay     Decimal        @db.Decimal(10, 2)
-  mainImageUrl      String?
-  isAvailable       Boolean        @default(true)
-  licensePlate      String         @unique
+  dailyRate         Decimal          @db.Decimal(10, 2)
+  lateFeePerDay     Decimal          @db.Decimal(10, 2)
+  mainImageUrl      String?          // <-- PERBAIKAN: Menggunakan 'mainImageUrl' (sesuai SQL)
+  isAvailable       Boolean          @default(true)
+  licensePlate      String           @unique
   city              String
-  address           String?        @db.Text
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  address           String?          @db.Text
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
-  owner             User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  images            VehicleImage[]
+  owner             User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   orders            Order[]
   reviews           Review[]
 
   @@map("Vehicle")
 }
 
-model VehicleImage {
-  id        Int      @id @default(autoincrement())
-  vehicleId Int
-  imageUrl  String
-  altText   String?
-  createdAt DateTime @default(now())
-
-  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-
-  @@map("VehicleImage")
-}
-
 model Order {
   id              Int           @id @default(autoincrement())
-  // userId sekarang harus String untuk referensi ke User.id
   userId          String
-  vehicleId       Int
-  driverId        Int? // OPTIONAL DRIVER
+  vehicleId       Int           // <-- PERBAIKAN: Menggunakan Int ID untuk vehicleId (sesuai Vehicle.id)
+  driverId        Int?
   startDate       DateTime
   endDate         DateTime
   rentalDays      Int
@@ -239,9 +225,8 @@ model Payment {
 
 model Review {
   id        Int      @id @default(autoincrement())
-  // userId sekarang harus String untuk referensi ke User.id
   userId    String
-  vehicleId Int
+  vehicleId Int      // <-- PERBAIKAN: Menggunakan Int ID untuk vehicleId (sesuai Vehicle.id)
   rating    Int      @default(0) @db.SmallInt
   comment   String?  @db.Text
   createdAt DateTime @default(now())
@@ -257,16 +242,15 @@ model Review {
 }
 
 model Notification {
-  id        Int            @id @default(autoincrement())
-  // userId sekarang harus String untuk referensi ke User.id
-  userId    String
-  title     String
-  message   String         @db.Text
-  type      NotificationType
-  isRead    Boolean        @default(false)
-  createdAt DateTime       @default(now())
+  id         Int            @id @default(autoincrement())
+  userId     String
+  title      String
+  message    String         @db.Text
+  type       NotificationType
+  isRead     Boolean        @default(false)
+  createdAt  DateTime       @default(now())
 
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("Notification")
@@ -274,7 +258,6 @@ model Notification {
 
 model AuditLog {
   id          Int         @id @default(autoincrement())
-  // userId sekarang harus String untuk referensi ke User.id
   userId      String?
   action      AuditAction
   description String      @db.Text
@@ -302,16 +285,16 @@ model ReferralCode {
 }
 
 model Driver {
-  id             Int      @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())
   name           String
   phoneNumber    String
   gender         String
-  address        String   @db.Text
-  dailyRate      Decimal  @db.Decimal(10, 2)
+  address        String    @db.Text
+  dailyRate      Decimal   @db.Decimal(10, 2)
   experienceYear Int
-  isAvailable    Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  isAvailable    Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   orders         Order[]
 
